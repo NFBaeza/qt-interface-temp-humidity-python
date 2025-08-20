@@ -7,12 +7,12 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from datetime import datetime
-import staticts as stat
+import Statistics as stat
 import numpy as np
-from db import DatabaseManager
+from DBManager import DatabaseManager
 
-DEBUG = True
-MAX_SAMPLE = 3
+DEBUG = False
+MAX_SAMPLE = 5
 datetime_init = datetime.today()
 
 temperature_range = {"°F": [-212, 212], "°C": [-100,100]}
@@ -65,8 +65,8 @@ class MainWindow(QMainWindow):
 					self.ts_data[0]= data_dict['timestamp']
 
 			if(self.samples < MAX_SAMPLE):
-				self.temp_list.append(data_dict['id'])
-				self.humi_list.append(data_dict['humidity'])
+				self.temp_list.append(data_dict['temperature'])
+				self.humi_list.append(data_dict['humidity']) ##2nd variable
 				self.samples= self.samples+1
 				if DEBUG: print("sample collected: ", self.samples)
 				
@@ -81,9 +81,9 @@ class MainWindow(QMainWindow):
 				self.humi_list = []
 
 		if (self.temperature_unit_name == "°C"):
-			self.temperature=data_dict['id']
+			self.temperature=data_dict['temperature']
 		else:
-			self.temperature=stat.celsius_to_fahrenheit(data_dict['id'])
+			self.temperature=stat.celsius_to_fahrenheit(data_dict['temperature'])
 
 		self.humidity=data_dict['humidity']
 		self.update_ui()
@@ -94,46 +94,51 @@ class MainWindow(QMainWindow):
 			self.temperature_unit_name = "°C"
 			self.temperature = stat.fahrenheit_to_celsius(self.temperature)
 			self.temp_list_graphic = [stat.fahrenheit_to_celsius(temp_i) for temp_i in self.temp_list_graphic]
-			self.avg_temperature = stat.fahrenheit_to_celsius(self.temperature_avg)
-			self.avg_temperature = stat.fahrenheit_to_celsius(self.temperature_avg)
-			self.max_temperature = stat.fahrenheit_to_celsius(self.temperature_max)
-			self.min_temperature = stat.fahrenheit_to_celsius(self.temperature_min)
+			self.temperature_avg = stat.fahrenheit_to_celsius(self.temperature_avg)
+			self.temperature_max = stat.fahrenheit_to_celsius(self.temperature_max)
+			self.temperature_min = stat.fahrenheit_to_celsius(self.temperature_min)
 
 		else:
 			self.temperature_unit_name = "°F"
 			self.temperature = stat.celsius_to_fahrenheit(self.temperature)
 			self.temp_list_graphic = [stat.celsius_to_fahrenheit(temp_i) for temp_i in self.temp_list_graphic]
-			self.avg_temperature = stat.celsius_to_fahrenheit(self.temperature_avg)
-			self.max_temperature = stat.celsius_to_fahrenheit(self.temperature_max)
-			self.min_temperature = stat.celsius_to_fahrenheit(self.temperature_min)
+			self.temperature_avg = stat.celsius_to_fahrenheit(self.temperature_avg)
+			self.temperature_max = stat.celsius_to_fahrenheit(self.temperature_max)
+			self.temperature_min = stat.celsius_to_fahrenheit(self.temperature_min)
 
+		self.actualizar_grafico_temp()
 		self.update_ui()
 
 	def stats_metrics(self, done=False):
 		self.stats_was_pressed = True;
 		if (self.stats_was_pressed): 
 			self.statistic_button.setEnabled(False)
-			self.graphic_button.setEnabled(False)	
+			self.graphic_button.setEnabled(False)
+			self.checkbox.setEnabled(False)
 
 		if done:
 			self.statistic_button.setEnabled(True)
 			self.graphic_button.setEnabled(True)
+			self.checkbox.setEnabled(True)
 			self.stats_was_pressed = False;
-			self.temperature_avg = stat.average(self.temp_list)
-			self.temperature_max = stat.maximum(self.temp_list)
-			self.temperature_min = stat.minimum(self.temp_list)
+
+			self.temperature_avg = stat.celsius_to_fahrenheit(stat.average(self.temp_list))
+			self.temperature_max = stat.celsius_to_fahrenheit(stat.maximum(self.temp_list))
+			self.temperature_min = stat.celsius_to_fahrenheit(stat.minimum(self.temp_list))
 			self.humidity_avg = stat.average(self.humi_list)
 			self.humidity_max = stat.maximum(self.humi_list)
 			self.humidity_min = stat.minimum(self.humi_list)
 			self.update_ui();
 			
 	def actualizar_grafico_temp(self):
-		if hasattr(self, 'temp_list_graphic') and self.temp_list_graphic and (self.temp_threshold != self.temp_threshold_spin.value()):
-			self.temp_threshold = self.temp_threshold_spin.value()
+		if hasattr(self, 'temp_list_graphic') and self.temp_list_graphic:
+			temp_threshold = self.temp_threshold_spin.value()
 
 			# Nuevos colores
-			temp_new_color = ['red' if temp > self.temp_threshold else 'purple' 
+			temp_new_color = ['red' if temp > temp_threshold else 'purple' 
 							 for temp in self.temp_list_graphic]
+
+			self.temp_line_plot.set_ydata(self.temp_list_graphic)
 
 			# Actualizar scatter
 			self.temp_line_scatter.remove()
@@ -141,10 +146,15 @@ class MainWindow(QMainWindow):
 										c=temp_new_color,
 										s=50,
 										alpha=0.8,
-										label='Temperature')
+										label='Temperature',
+										marker="^")
+
+
 
 			self.ax.legend(loc='lower right', fontsize='small')
 			self.ax.set_ylabel(self.temperature_unit_name)
+			self.ax.relim()
+			self.ax.autoscale_view(scaley=True)
 			self.canvas.draw()
 
 	def actualizar_grafico_humi(self):
@@ -158,7 +168,7 @@ class MainWindow(QMainWindow):
 	        self.humi_line_scatter = self.ax2.scatter(self.time_list, self.humi_list_graphic,
 	                                                c=humi_new_colors,
 	                                                s=50,
-	                                                alpha=0.8,
+	                                                alpha=0.6,
 	                                                label='Humidity')
 	        
 	        self.ax2.legend(loc='upper right', fontsize='small')
@@ -177,6 +187,8 @@ class MainWindow(QMainWindow):
 		self.humidity_min_label.setText("{:<10} {:>4.1f} {:<4}\n".format("Temperatura:", self.humidity_min, self.humidity_unit_name))
 		self.temperature_alarm_threshold.setValidator(QIntValidator(temperature_range[self.temperature_unit_name][0],temperature_range[self.temperature_unit_name][1]))  
 		self.temperature_unit_label.setText(self.temperature_unit_name)
+		self.temp_threshold_spin.setRange(temperature_range[self.temperature_unit_name][0], temperature_range[self.temperature_unit_name][1])
+
 
 		if (self.temp_list_graphic != [] and ~self.create_graphic_button_was_pressed):
 			self.actualizar_grafico_temp()
@@ -197,6 +209,7 @@ class MainWindow(QMainWindow):
 			self.etiqueta_imagen.setVisible(False)
 			self.statistic_button.setEnabled(False)
 			self.graphic_button.setEnabled(False)
+			self.checkbox.setEnabled(False)
 			self.humi_threshold_spin.setEnabled(False)
 			self.temp_threshold_spin.setEnabled(False)
 
@@ -208,6 +221,7 @@ class MainWindow(QMainWindow):
 			self.create_graphic_button_was_pressed = False;
 			self.statistic_button.setEnabled(True)
 			self.graphic_button.setEnabled(True)
+			self.checkbox.setEnabled(True)
 			self.humi_threshold_spin.setEnabled(True)
 			self.temp_threshold_spin.setEnabled(True)
 
@@ -221,12 +235,12 @@ class MainWindow(QMainWindow):
 				self.temp_list_graphic = self.temp_list 
 
 			self.temp_line_plot, = self.ax.plot(self.time_list, self.temp_list_graphic, linestyle="--", color='purple', alpha=0.5, linewidth=1.5)
-			self.temp_line_scatter = self.ax.scatter(self.time_list, self.temp_list_graphic, c='purple', s=50, alpha=0.8, label='Temperature')
+			self.temp_line_scatter = self.ax.scatter(self.time_list, self.temp_list_graphic, c='purple', s=50, alpha=0.8, label='Temperature', marker="^")
 			self.ax.set_ylabel(self.temperature_unit_name)
 
 			self.ax2 = self.ax.twinx()
-			self.humi_line_plot, = self.ax2.plot(self.time_list, self.humi_list_graphic, linestyle="--", color='blue', alpha=0.5, linewidth=1.5)
-			self.humi_line_scatter = self.ax2.scatter(self.time_list, self.humi_list_graphic, c='blue', s=50, alpha=0.8, label='Humidity')
+			#self.humi_line_plot, = self.ax2.plot(self.time_list, self.humi_list_graphic, linestyle="--", color='blue', alpha=0.5, linewidth=1.5)
+			self.humi_line_scatter = self.ax2.scatter(self.time_list, self.humi_list_graphic, c='blue', s=50, alpha=0.6, label='Humidity')
 			self.ax2.set_ylabel(self.humidity_unit_name)
 
 
@@ -242,8 +256,8 @@ class MainWindow(QMainWindow):
 		container = QGridLayout()
 		container.setContentsMargins(10, 7, 10, 7)
 
-		checkbox = QCheckBox("°C")
-		checkbox.stateChanged.connect(self.unit_change)
+		self.checkbox = QCheckBox("°C")
+		self.checkbox.stateChanged.connect(self.unit_change)
 
 		pixmap = QPixmap("original.jpg")
 
@@ -343,10 +357,8 @@ class MainWindow(QMainWindow):
 		data_layout.addWidget(self.temperature_min_label, 9, 0)  
 		data_layout.addWidget(self.humidity_min_label, 9, 1)  
 
-		
-### aca estoy 
 		self.temp_threshold_spin = QSpinBox()
-		self.temp_threshold_spin.setRange(-10000, 10000)
+		self.temp_threshold_spin.setRange(temperature_range[self.temperature_unit_name][0], temperature_range[self.temperature_unit_name][1])
 		self.temp_threshold_spin.setValue(0)
 		self.temp_threshold_spin.valueChanged.connect(self.actualizar_grafico_temp)
 
@@ -374,7 +386,7 @@ class MainWindow(QMainWindow):
 		self.canvas.setVisible(False)
 
 		container.addWidget(data_container, 0, 1, 1, 1, Qt.AlignRight)   
-		container.addWidget(checkbox, 6, 1, 1, 2, Qt.AlignCenter)  
+		container.addWidget(self.checkbox, 6, 1, 1, 2, Qt.AlignCenter)  
 
 		widget_central.setLayout(container)
 
