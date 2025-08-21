@@ -47,7 +47,6 @@ class DatabaseManager(QThread):
 		self.timer.start(time)
 	
 	def get_latest_record(self, table_name='readings', date_column='id'):
-		"""Obtener el registro más reciente"""
 		if not self.connection:
 			return None
 		
@@ -70,7 +69,7 @@ class DatabaseManager(QThread):
 	
 	def check_for_new_data(self):
 		try:
-			latest_data = self.get_latest_record('readings')  # Cambié self.db_manager por self
+			latest_data = self.get_latest_record('readings')
 			
 			if latest_data is None:
 				return
