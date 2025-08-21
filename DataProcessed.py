@@ -9,7 +9,7 @@ import Statistics as stat
 import numpy as np
 
 DEBUG = False
-MAX_SAMPLE = 10
+MAX_SAMPLE = 2
 
 @dataclass
 class value:
@@ -93,11 +93,15 @@ class DataProcessed(QThread):
 	def collecting_data(self):
 		if DEBUG: print(f"collecting data...")
 		self.samples = 0
+		self.humidity._list=[]
+		self.temperature._list=[]
 		self.processing = True
 
 	def collecting_plotting_data(self):
 		if DEBUG: print(f"collecting data...")
 		self.samples = 0
+		self.humidity._list=[]
+		self.temperature._list=[]
 		self.processing = True
 		self.is_plot = True
 
@@ -107,8 +111,7 @@ class DataProcessed(QThread):
 
 	def plotting(self):
 		self.ts_data._list = self.create_serie_time_list()
-		if DEBUG: print(f"Tiempo: {self.ts_data._list}")
-		self.unit_change()	
+		if DEBUG: print(f"Tiempo: {self.ts_data._list}")	
 
 
 	def unit_change(self, unit_name="°F"):

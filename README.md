@@ -1,5 +1,5 @@
 # **Temperature and Humidity Reporter**
-**Coursera Project:** *Interface for Embedded Systems using Python and Qt* [PDF](misc/Assigment.pdf)
+**Coursera Project:** *Interface for Embedded Systems using Python and Qt* ([PDF](misc/Assignment.pdf))	
 
 ---
 
@@ -31,7 +31,7 @@ deactivate
 
 ### DB: mysqlDB
 
-Install mysql (full guide [here](https://documentation.ubuntu.com/server/how-to/databases/install-mysql/):
+Install mysql (full guide [here](https://documentation.ubuntu.com/server/how-to/databases/install-mysql/)):
 
 ```sh
 sudo apt install mysql-server

@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
 		self.db_worker = DatabaseManager()
 		self.db_worker.setup_polling(5000) 
 
-		self.setWindowTitle("My App")
+		self.setWindowTitle("Wetter Repoter")
 		self.resize(1000, 600) 
 
 		self.data = DataProcessed(self.db_worker)
@@ -63,12 +63,16 @@ class MainWindow(QMainWindow):
 			self.statistic_button.setEnabled(True)
 			self.graphic_button.setEnabled(True)
 			self.checkbox.setEnabled(True)
+			self.humi_threshold_spin.setEnabled(True)
+			self.temp_threshold_spin.setEnabled(True)
 			self.update_ui();
 
 		else:
 			self.statistic_button.setEnabled(False)
 			self.graphic_button.setEnabled(False)
 			self.checkbox.setEnabled(False)
+			self.humi_threshold_spin.setEnabled(False)
+			self.temp_threshold_spin.setEnabled(False)
 			self.statistic_button_signal.emit(True)
 
 	def update_ui_graphic_temp(self):
@@ -81,17 +85,17 @@ class MainWindow(QMainWindow):
 
 			self.temp_line_plot.set_ydata(self.data.temperature._list)
 			self.temp_line_scatter.remove()
-			self.temp_line_scatter = self.ax.scatter(self.data.ts_data._list, self.data.temperature._list,
+			self.temp_line_scatter = self.ax_temp.scatter(self.data.ts_data._list, self.data.temperature._list,
 									c=temp_new_color,
 									s=50,
 									alpha=0.8,
 									label='Temperature',
 									marker="^")
 
-			self.ax.legend(loc='lower right', fontsize='small')
-			self.ax.set_ylabel(self.temperature_unit_name)
-			self.ax.relim()
-			self.ax.autoscale_view(scaley=True)
+			self.ax_temp.legend(loc='lower right', fontsize='small')
+			self.ax_temp.set_ylabel(self.temperature_unit_name)
+			self.ax_temp.relim()
+			self.ax_temp.autoscale_view(scaley=True)
 			self.canvas.draw()
 
 
@@ -105,16 +109,16 @@ class MainWindow(QMainWindow):
 
 			self.humi_line_plot.set_ydata(self.data.humidity._list)
 			self.humi_line_scatter.remove()
-			self.humi_line_scatter = self.ax2.scatter(self.data.ts_data._list, self.data.humidity._list,
+			self.humi_line_scatter = self.ax_humi.scatter(self.data.ts_data._list, self.data.humidity._list,
                                                 c=humi_new_colors,
 	                                            s=50,
 	                                            alpha=0.6,
 	                                            label='Humidity')
 
-			self.ax.legend(loc='lower right', fontsize='small')
-			self.ax.set_ylabel(self.humidity_unit_name)
-			self.ax.relim()
-			self.ax.autoscale_view(scaley=True)
+			self.ax_humi.legend(loc='lower right', fontsize='small')
+			self.ax_humi.set_ylabel(self.humidity_unit_name)
+			self.ax_humi.relim()
+			self.ax_humi.autoscale_view(scaley=True)
 			self.canvas.draw()
 			
 			
@@ -125,18 +129,15 @@ class MainWindow(QMainWindow):
 		self.humi_threshold_spin.setEnabled(True)
 		self.temp_threshold_spin.setEnabled(True)
 
-		self.temp_line_plot, = self.ax.plot(self.data.ts_data._list, self.data.temperature._list, linestyle="--", color='purple', alpha=0.5, linewidth=1.5)
-		self.temp_line_scatter = self.ax.scatter(self.data.ts_data._list, self.data.temperature._list, c='purple', s=50, alpha=0.8, label='Temperature', marker="^")
-		self.ax.set_ylabel(self.temperature_unit_name)
+		self.temp_line_plot, = self.ax_temp.plot(self.data.ts_data._list, self.data.temperature._list, linestyle="--", color='purple', alpha=0.5, linewidth=1.5)
+		self.temp_line_scatter = self.ax_temp.scatter(self.data.ts_data._list, self.data.temperature._list, c='purple', s=50, alpha=0.8, label='Temperature', marker="^")
+		self.ax_temp.set_ylabel(self.temperature_unit_name)
 
-		self.ax2 = self.ax.twinx()
-		self.humi_line_plot, = self.ax2.plot(self.data.ts_data._list, self.data.humidity._list, linestyle="--", color='blue', alpha=0.5, linewidth=1.5)
-		self.humi_line_scatter = self.ax2.scatter(self.data.ts_data._list, self.data.humidity._list, c='blue', s=50, alpha=0.6, label='Humidity')
-		self.ax2.set_ylabel(self.humidity_unit_name)
+		self.humi_line_plot, = self.ax_humi.plot(self.data.ts_data._list, self.data.humidity._list, linestyle="--", color='blue', alpha=0.5, linewidth=1.5)
+		self.humi_line_scatter = self.ax_humi.scatter(self.data.ts_data._list, self.data.humidity._list, c='blue', s=50, alpha=0.6, label='Humidity')
+		self.ax_humi.set_ylabel(self.humidity_unit_name)
 
-		self.ax.set_xlabel('Time')
-		self.ax.set_title('Temperature & Humidity')
-		self.ax.legend(loc='lower right', fontsize='small')
+		self.ax_temp.legend(loc='lower right', fontsize='small')
 		self.canvas.draw()
 
 
@@ -150,8 +151,12 @@ class MainWindow(QMainWindow):
 		self.temp_threshold_spin.setEnabled(False)
 
 		self.plot.clear()
-		self.ax = self.plot.add_subplot(111)	
-		self.ax.grid(True, alpha=0.3)
+		self.ax_temp = self.plot.add_subplot(211)
+		self.ax_humi = self.plot.add_subplot(212)	
+		self.ax_temp.grid(True, alpha=0.3)
+		self.ax_humi.grid(True, alpha=0.3)
+		self.plot.suptitle('Temperature & Humidity')
+		self.ax_humi.set_xlabel('Time')
 
 		self.plot_button_signal.emit(True)
 
